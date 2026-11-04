@@ -2,7 +2,7 @@ add_executable(scavenger
     src/main.cpp
     src/placeholder_art.cpp
 )
-target_link_libraries(scavenger PRIVATE phantasm_iso phantasm_warnings)
+target_link_libraries(scavenger PRIVATE phantasm_iso phantasm_physics phantasm_warnings)
 
 add_custom_target(scavenger_assets ALL
     COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different

@@ -2,14 +2,17 @@
 #include "tiles.hpp"
 
 #include <phantasm/application.hpp>
+#include <phantasm/fixed_step.hpp>
 #include <phantasm/iso/iso_grid.hpp>
 #include <phantasm/iso/tile_map.hpp>
 #include <phantasm/log.hpp>
 #include <phantasm/paths.hpp>
+#include <phantasm/physics/world.hpp>
 #include <phantasm/sprite.hpp>
 #include <phantasm/texture.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <exception>
 #include <stdexcept>
 #include <string>
@@ -37,7 +40,11 @@ constexpr Rgba kSupply{220, 150, 40};
 constexpr Rgba kEdge{40, 38, 44};
 
 constexpr float kArtScale = 2.0F;
-constexpr float kCameraSpeed = 500.0F;
+// Physics runs in grid space: one tile is one Box2D meter.
+constexpr float kTilesPerMeter = 1.0F;
+constexpr float kPlayerSpeed = 3.0F;   // tiles per second
+constexpr float kPlayerRadius = 0.3F;  // tiles
+constexpr double kPhysicsStep = 1.0 / 60.0;
 constexpr float kZoomStep = 1.5F;
 constexpr float kMinZoom = 0.5F;
 constexpr float kMaxZoom = 4.0F;
@@ -85,7 +92,11 @@ public:
         if (starts.size() != 1) {
             throw std::runtime_error("Map needs exactly one player start 'P'");
         }
+        add_wall_bodies();
         player_position_ = tile_center(starts.front());
+        player_body_ = physics_.create_body(
+            phantasm::physics::BodyDef{.position = {player_position_.x, player_position_.y}});
+        physics_.add_circle(player_body_, phantasm::physics::Circle{.radius = kPlayerRadius});
         renderer().set_camera({.position = grid_.grid_to_world(player_position_), .zoom = 1.0F});
         set_clear_color({0.08F, 0.09F, 0.12F, 1.0F});
         phantasm::log_info("Map {}x{}, {} level(s)", map_.width(), map_.height(),
@@ -95,25 +106,19 @@ public:
 protected:
     void on_update(double delta_seconds) override {
         using phantasm::Key;
-        const auto dt = static_cast<float>(delta_seconds);
         if (input().was_pressed(Key::Escape)) {
             request_quit();
         }
 
+        physics_.set_velocity(player_body_, player_velocity());
+        for (int steps = stepper_.advance(delta_seconds); steps > 0; --steps) {
+            physics_.step(static_cast<float>(stepper_.step()));
+        }
+        const Vec2 position = physics_.position(player_body_);
+        player_position_ = GridPos{position.x, position.y, 0};
+
         phantasm::Camera camera = renderer().camera();
-        const float step = kCameraSpeed * dt / camera.zoom;
-        if (input().is_down(Key::A) || input().is_down(Key::Left)) {
-            camera.position.x -= step;
-        }
-        if (input().is_down(Key::D) || input().is_down(Key::Right)) {
-            camera.position.x += step;
-        }
-        if (input().is_down(Key::W) || input().is_down(Key::Up)) {
-            camera.position.y -= step;
-        }
-        if (input().is_down(Key::S) || input().is_down(Key::Down)) {
-            camera.position.y += step;
-        }
+        camera.position = grid_.grid_to_world(player_position_);
         if (input().was_pressed(Key::E)) {
             camera.zoom = std::min(camera.zoom * kZoomStep, kMaxZoom);
         }
@@ -137,6 +142,39 @@ protected:
 private:
     phantasm::Texture make_texture(const placeholder::Pixels& pixels) {
         return renderer().create_texture(pixels.width, pixels.height, pixels.rgba);
+    }
+
+    // Screen-relative controls: W moves up the screen, which is diagonal on the grid.
+    Vec2 player_velocity() const {
+        using phantasm::Key;
+        Vec2 screen{};
+        if (input().is_down(Key::A) || input().is_down(Key::Left)) {
+            screen.x -= 1.0F;
+        }
+        if (input().is_down(Key::D) || input().is_down(Key::Right)) {
+            screen.x += 1.0F;
+        }
+        if (input().is_down(Key::W) || input().is_down(Key::Up)) {
+            screen.y -= 1.0F;
+        }
+        if (input().is_down(Key::S) || input().is_down(Key::Down)) {
+            screen.y += 1.0F;
+        }
+        const Vec2 grid = grid_.world_delta_to_grid(screen);
+        const float length = std::sqrt(grid.x * grid.x + grid.y * grid.y);
+        if (length == 0.0F) {
+            return {};
+        }
+        return Vec2{grid.x / length * kPlayerSpeed, grid.y / length * kPlayerSpeed};
+    }
+
+    void add_wall_bodies() {
+        for (const TileCoord wall : map_.find(scavenger::tiles::kWall)) {
+            const GridPos center = tile_center(wall);
+            const auto body = physics_.create_body(phantasm::physics::BodyDef{
+                .type = phantasm::physics::BodyType::Static, .position = {center.x, center.y}});
+            physics_.add_box(body, phantasm::physics::Box{.half_extents = {0.5F, 0.5F}});
+        }
     }
 
     void draw_tile(TileCoord tile) {
@@ -185,6 +223,9 @@ private:
     phantasm::Texture player_;
     phantasm::Texture supply_;
     GridPos player_position_{};
+    phantasm::physics::World physics_{phantasm::physics::WorldConfig{.units_per_meter = kTilesPerMeter}};
+    phantasm::physics::BodyHandle player_body_{};
+    phantasm::FixedStep stepper_{kPhysicsStep};
 };
 
 } // namespace

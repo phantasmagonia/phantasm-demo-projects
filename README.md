@@ -5,7 +5,7 @@ an open-source C++20 2D game engine with an isometric layer.
 
 | Demo | Status | Shows |
 |---|---|---|
-| [`scavenger/`](scavenger) | In progress | Isometric tile map, floor/object layers, depth sorting |
+| [`scavenger/`](scavenger) | In progress | Isometric tile map, depth sorting, physics movement with wall collision |
 
 ## Build
 
@@ -17,6 +17,8 @@ cmake --preset debug
 cmake --build --preset debug
 ./build/debug/bin/scavenger
 ```
+
+Scavenger controls: WASD/arrows move (screen-relative), Q/E zoom, Esc quits.
 
 The engine is fetched at a pinned commit (see `CMakeLists.txt`). To build against a local
 engine checkout:

@@ -13,7 +13,7 @@ include(FetchContent)
 FetchContent_Declare(
     Phantasm
     GIT_REPOSITORY https://github.com/phantasmagonia/Phantasm.git
-    GIT_TAG 4679f4826341513458ac4a6c612ea680ed702ad5
+    GIT_TAG 5c700dfb8c798f3bc0ded35b734bfbe9a15a82de
 )
 FetchContent_MakeAvailable(Phantasm)
 
