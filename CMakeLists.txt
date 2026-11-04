@@ -12,8 +12,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 include(FetchContent)
 FetchContent_Declare(
     Phantasm
-    GIT_REPOSITORY https://github.com/hacengeloglu-blip/Phantasm.git
-    GIT_TAG bde74ca19cc5fa21798854349ecf11009a959f79
+    GIT_REPOSITORY https://github.com/phantasmagonia/Phantasm.git
+    GIT_TAG 4679f4826341513458ac4a6c612ea680ed702ad5
 )
 FetchContent_MakeAvailable(Phantasm)
 

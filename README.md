@@ -1,6 +1,6 @@
 # Phantasm Demo Projects
 
-Example games built on [Phantasm](https://github.com/hacengeloglu-blip/Phantasm),
+Example games built on [Phantasm](https://github.com/phantasmagonia/Phantasm),
 an open-source C++20 2D game engine with an isometric layer.
 
 | Demo | Status | Shows |

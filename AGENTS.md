@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Example games for the Phantasm engine (https://github.com/hacengeloglu-blip/Phantasm).
+Example games for the Phantasm engine (https://github.com/phantasmagonia/Phantasm).
 Read the engine's AGENTS.md for engine conventions.
 
 - Each demo is a folder with its own `CMakeLists.txt`, `src/`, and `assets/` (data such as maps).
